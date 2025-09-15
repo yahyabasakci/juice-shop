@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '18'        # gerekiyorsa değiştirebilirsin
-  BUILD_DIR: 'dist'        # <-- burayı projenin build çıktısına göre değiştir
+  NODE_VERSION: '18'        # gerekiyorsa değiştir
+  BUILD_DIR: 'dist'         # <-- build çıktının klasörünü buraya yaz (ör: dist / build)
 
 jobs:
   build:
@@ -72,13 +72,11 @@ jobs:
 
       - name: Generate SBOM (JSON)
         run: |
-          # syft ile artifact içindeki build dizinini tara
           syft dir:./artifact/${{ env.BUILD_DIR }} -o json > sbom.json
-          echo "SBOM üretildi: sbom.json (JSON)"
+          echo "SBOM üretildi: sbom.json"
 
-      - name: Generate SBOM (CycloneDX)  # opsiyonel, başka format istersen
-        run: |
-          syft dir:./artifact/${{ env.BUILD_DIR }} -o cyclonedx-json > sbom.cdx.json || true
+      - name: Generate SBOM (CycloneDX JSON)  # opsiyonel
+        run: syft dir:./artifact/${{ env.BUILD_DIR }} -o cyclonedx-json > sbom.cdx.json || true
 
       - name: Upload SBOM artifacts
         uses: actions/upload-artifact@v3
