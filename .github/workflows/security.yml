@@ -47,9 +47,7 @@ jobs:
             sbom.cdx.json
 
       - name: Run Semgrep Security Scan
-        uses: returntocorp/semgrep-action@v2
+        uses: returntocorp/semgrep-action@v1
         with:
-          # Eğer özel kurallar yoksa hazır CI rules seti kullan
-          config: "p/ci"
-          # Eğer sadece repo kodunu taramak istiyorsan path ver
-          path: "."
+             config: "p/ci"
+             path: "."
