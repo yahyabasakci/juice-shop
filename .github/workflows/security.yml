@@ -1,4 +1,4 @@
-name: Security pipeline — docker build & SBOM
+name: Security pipeline — Docker + SBOM + Semgrep + Gitleaks
 
 on:
   push:
@@ -8,13 +8,15 @@ on:
   workflow_dispatch:
 
 jobs:
-  docker-sbom:
+  security:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Docker build
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -25,9 +27,10 @@ jobs:
           file: ./Dockerfile
           tags: juice-shop:latest
           push: false
-          load: true   # Image runner içinde yüklenecek
+          load: true
 
-      - name: Install Syft (Anchore)
+      # 3️⃣ SBOM (Syft)
+      - name: Install Syft
         run: |
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh \
           | sh -s -- -b /usr/local/bin
@@ -46,8 +49,32 @@ jobs:
             sbom.json
             sbom.cdx.json
 
-      - name: Run Semgrep Security Scan
-        uses: returntocorp/semgrep-action@v1
+      # 4️⃣ Semgrep SAST
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
-             config: "p/ci"
-             path: "."
+          python-version: "3.x"
+
+      - name: Install Semgrep
+        run: pip install semgrep
+
+      - name: Run Semgrep scan
+        run: semgrep --config p/ci --json --output semgrep-results.json .
+
+      - name: Upload Semgrep results
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-results
+          path: semgrep-results.json
+
+      # 5️⃣ Gitleaks (secret scan)
+      - name: Run Gitleaks
+        uses: zricethezav/gitleaks-action@v2
+        with:
+          args: detect --source=. --report-path=gitleaks-report.json
+
+      - name: Upload Gitleaks report
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: gitleaks-report.json
